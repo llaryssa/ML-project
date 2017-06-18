@@ -32,13 +32,19 @@ def diskr(data, labels, theta, k_neighbors):
     data = data[sort_idx]
     labels = labels[sort_idx]
 
-    cnt = 0
+
+    # acho que da pra calcular isso tudo de uma vez sem ser iterativo
     i = 0
     while i < len(data):
         # T - {xi}
         data_without_xi = np.delete(data, i, axis=0)
         labels_without_xi = np.delete(labels, i)
 
+        print data.shape, data_without_xi.shape
+
+        # suspeito que esse conjunto de treinamento (passado no fit) ta errado
+        # tem que ver se sao os dados atuais removendo ou o dado inicial sem remocao
+        # ta removendo gente demais
         y_hat = knn.fit(data, labels).predict(data_without_xi)
         y_hat_line = knn.fit(data_without_xi, labels_without_xi).predict(data_without_xi)
 
@@ -50,6 +56,9 @@ def diskr(data, labels, theta, k_neighbors):
             data = np.delete(data, i, axis=0)
             labels = np.delete(labels, i)
             i = i - 1
+            # no algoritmo diz que agora precisa recalcular o centro do cara que a gente tirou
+            # mas isso nao eh obvio pro knn? ele n faz isso sozinho?
+
         i = i + 1
 
     print "final: ", data.shape
@@ -76,6 +85,6 @@ train_labels = labels[:int(split)]
 test_data = data[int(split):,:]
 test_labels = labels[int(split):]
 
-theta = 0.05
+theta = 0.1
 k = 9
 diskr(train_data, train_labels, theta, k)
