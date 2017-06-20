@@ -79,13 +79,21 @@ def diskr(data, labels, theta, k_neighbors):
 # dataset = "mortgage"
 # dataset = "concrete"
 # dataset = "treasury"
-dataset = "ele-2"
+# dataset = "ele-2"
+# dataset = "wizmir"
+dataset = "anacalt"
 
-thetaByDataset = {"plastic":0.01, "mortgage":0.002, "concrete":0.001, "treasury":0.0005, "ele-2":0.007}
+thetaByDataset = {"plastic":0.01,
+                "mortgage":0.002,
+                "concrete":0.001,
+                "treasury":0.0005,
+                "ele-2":0.007,
+                "wizmir":0.001}
 
 dataset_path = "datasets/" + dataset + ".dat"
 data, labels = readFile(dataset_path)
-print "data shape: ", data.shape, " | labels shape: ", labels.shape
+print "testing dataset: ", dataset
+print "data shape: ", data.shape, " | labels shape: ", labels.shape, "\n"
 
 
 ### random split
@@ -104,8 +112,8 @@ cv_index = np.array(cv_index[:len(data)])
 r2_cross_validation = []
 compression_cross_validation = []
 
-for cv in range(0,cross_v):
-# for cv in range(0,10,23):
+# for cv in range(0,cross_v):
+for cv in range(5,10,23):
     train_idx = cv_index != cv
     test_idx = cv_index == cv
 
@@ -118,29 +126,29 @@ for cv in range(0,cross_v):
     print "training size: ", train_data.shape, "testing size: ", test_data.shape
 
 
-    # for th in range(0,10,1):
-        # theta = float(th)/1000
+    for th in range(0,100,10):
+        theta = float(th)/100
 
-    theta = thetaByDataset[dataset]
-    k = 9
+        # theta = thetaByDataset[dataset]
+        k = 9
 
-    try:
-        data_, labels_ = diskr(train_data, train_labels, theta, k)
-    except:
-        print "erro theta", theta
-        pass
+        try:
+            data_, labels_ = diskr(train_data, train_labels, theta, k)
+        except:
+            print "erro theta", theta
+            pass
 
-    knn = neighbors.KNeighborsRegressor(k)
-    labels_hat = knn.fit(data_, labels_).predict(test_data)
+        knn = neighbors.KNeighborsRegressor(k)
+        labels_hat = knn.fit(data_, labels_).predict(test_data)
 
-    r2 = r2_score(test_labels, labels_hat)
-    r2_cross_validation.append(r2)
+        r2 = r2_score(test_labels, labels_hat)
+        r2_cross_validation.append(r2)
 
-    compression = float(len(data_)) / len(train_data)
-    compression_cross_validation.append(compression)
+        compression = float(len(data_)) / len(train_data)
+        compression_cross_validation.append(compression)
 
-    print cv, " th:", theta, " | r2 =", r2, " c =", compression
-    print
+        print cv, " th:", theta, " | r2 =", r2, " c =", compression
+        print
 
 print "r2: ", r2_cross_validation
 print "mean: ", np.mean(r2_cross_validation), "\n"
