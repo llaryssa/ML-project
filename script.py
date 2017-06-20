@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from sklearn import neighbors
+from sklearn.metrics import r2_score
 
 def readFile(path):
     file = open(path, 'r')
@@ -12,6 +13,8 @@ def readFile(path):
     return data[:,0:data.shape[1]-1], data[:,data.shape[1]-1]
 
 def diskr(data, labels, theta, k_neighbors):
+    raw_data = data
+    raw_labels = labels
     knn = neighbors.KNeighborsRegressor(k_neighbors)
     print "starting... data.shape", data.shape
 
@@ -24,7 +27,7 @@ def diskr(data, labels, theta, k_neighbors):
     labels = labels[-outliers]
     PD = PD[-outliers]
 
-    print "outliers removed... data.shape", data.shape
+    print len(raw_data) - len(data), "outliers removed... data.shape", data.shape
 
     ###### second part: removing indistintive instances
     # sort in descending pd order
@@ -40,7 +43,7 @@ def diskr(data, labels, theta, k_neighbors):
         data_without_xi = np.delete(data, i, axis=0)
         labels_without_xi = np.delete(labels, i)
 
-        print data.shape, data_without_xi.shape
+        # print data.shape, data_without_xi.shape
 
         # suspeito que esse conjunto de treinamento (passado no fit) ta errado
         # tem que ver se sao os dados atuais removendo ou o dado inicial sem remocao
@@ -51,8 +54,9 @@ def diskr(data, labels, theta, k_neighbors):
         Rbf = sum(map(lambda x: math.pow(x,2), (labels_without_xi - y_hat)))
         Raf = sum(map(lambda x: math.pow(x,2), (labels_without_xi - y_hat_line)))
 
+        # print Raf, Rbf, (Raf - Rbf), "<=", theta, Raf, theta*Raf
+
         if (Raf - Rbf) <= theta * Raf:
-            # tem que ver como fica o for(i) depois disso
             data = np.delete(data, i, axis=0)
             labels = np.delete(labels, i)
             i = i - 1
@@ -61,14 +65,18 @@ def diskr(data, labels, theta, k_neighbors):
 
         i = i + 1
 
-    print "final: ", data.shape
+    print "final: ", data.shape, labels.shape
+
+    return data, labels
 
 
 
 
 ########################################################
 
-dataset_path = "datasets/abalone.dat"
+dataset_path = "datasets/mortgage.dat"
+# dataset_path = "datasets/abalone.dat"
+# dataset_path = "datasets/ANACALT.dat"
 data, labels = readFile(dataset_path)
 print "data shape: ", data.shape, " | labels shape: ", labels.shape
 
@@ -78,13 +86,43 @@ p = np.random.permutation(len(data))
 data = data[p]
 labels = labels[p]
 
-split = len(data) * 0.2
-train_data = data[:int(split),:]
-train_labels = labels[:int(split)]
+# defining each split for cross validation
+cross_v = 10
+gap = int(math.ceil(float(len(data))/cross_v))
+cv_index = []
+for i in range(0,cross_v):
+    cv_index += [i]*gap
+cv_index = np.array(cv_index[:len(data)])
 
-test_data = data[int(split):,:]
-test_labels = labels[int(split):]
 
-theta = 0.1
-k = 9
-diskr(train_data, train_labels, theta, k)
+r2_cross_validation = []
+
+
+for cv in range(0,cross_v):
+    train_idx = cv_index != cv
+    test_idx = cv_index == cv
+
+    train_data = data[train_idx,:]
+    train_labels = labels[train_idx]
+
+    test_data = data[test_idx,:]
+    test_labels = labels[test_idx]
+
+    print "training size: ", train_data.shape, "testing size: ", test_data.shape
+
+    theta = 0.1
+    k = 9
+
+    data_, labels_ = diskr(train_data, train_labels, theta, k)
+
+    knn = neighbors.KNeighborsRegressor(k)
+    labels_hat = knn.fit(data_, labels_).predict(test_data)
+
+    r2 = r2_score(test_labels, labels_hat)
+    r2_cross_validation.append(r2)
+
+    print cv, ":", r2
+    print
+
+print "r2: ", r2_cross_validation
+print "mean: ", np.mean(r2_cross_validation)
