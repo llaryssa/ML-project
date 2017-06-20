@@ -88,7 +88,8 @@ thetaByDataset = {"plastic":0.01,
                 "concrete":0.001,
                 "treasury":0.0005,
                 "ele-2":0.007,
-                "wizmir":0.001}
+                "wizmir":0.001,
+                "anacalt":0.55}
 
 dataset_path = "datasets/" + dataset + ".dat"
 data, labels = readFile(dataset_path)
@@ -126,7 +127,7 @@ for cv in range(5,10,23):
     print "training size: ", train_data.shape, "testing size: ", test_data.shape
 
 
-    for th in range(0,100,10):
+    for th in range(3,100,10):
         theta = float(th)/100
 
         # theta = thetaByDataset[dataset]
