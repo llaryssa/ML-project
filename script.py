@@ -16,7 +16,7 @@ def diskr(data, labels, theta, k_neighbors):
     raw_data = data
     raw_labels = labels
     knn = neighbors.KNeighborsRegressor(k_neighbors)
-    print "starting... data.shape", data.shape
+    # print "starting... data.shape", data.shape
 
     ##### first part: remove outliers
     y_hat = knn.fit(data, labels).predict(data)
@@ -27,7 +27,7 @@ def diskr(data, labels, theta, k_neighbors):
     labels = labels[-outliers]
     PD = PD[-outliers]
 
-    print len(raw_data) - len(data), "outliers removed... data.shape", data.shape
+    # print len(raw_data) - len(data), "outliers removed... data.shape", data.shape
 
     ###### second part: removing indistintive instances
     # sort in descending pd order
@@ -65,7 +65,9 @@ def diskr(data, labels, theta, k_neighbors):
 
         i = i + 1
 
-    print "final: ", data.shape, labels.shape
+    # print len(raw_data) - len(data), "instances removed"
+    # print "final: ", data.shape, labels.shape
+    # print "compression: ", float(len(data))/len(raw_data)
 
     return data, labels
 
@@ -73,10 +75,15 @@ def diskr(data, labels, theta, k_neighbors):
 
 
 ########################################################
+# dataset = "plastic"
+# dataset = "mortgage"
+# dataset = "concrete"
+# dataset = "treasury"
+dataset = "ele-2"
 
-dataset_path = "datasets/mortgage.dat"
-# dataset_path = "datasets/abalone.dat"
-# dataset_path = "datasets/ANACALT.dat"
+thetaByDataset = {"plastic":0.01, "mortgage":0.002, "concrete":0.001, "treasury":0.0005, "ele-2":0.007}
+
+dataset_path = "datasets/" + dataset + ".dat"
 data, labels = readFile(dataset_path)
 print "data shape: ", data.shape, " | labels shape: ", labels.shape
 
@@ -94,11 +101,11 @@ for i in range(0,cross_v):
     cv_index += [i]*gap
 cv_index = np.array(cv_index[:len(data)])
 
-
 r2_cross_validation = []
-
+compression_cross_validation = []
 
 for cv in range(0,cross_v):
+# for cv in range(0,10,23):
     train_idx = cv_index != cv
     test_idx = cv_index == cv
 
@@ -110,10 +117,18 @@ for cv in range(0,cross_v):
 
     print "training size: ", train_data.shape, "testing size: ", test_data.shape
 
-    theta = 0.1
+
+    # for th in range(0,10,1):
+        # theta = float(th)/1000
+
+    theta = thetaByDataset[dataset]
     k = 9
 
-    data_, labels_ = diskr(train_data, train_labels, theta, k)
+    try:
+        data_, labels_ = diskr(train_data, train_labels, theta, k)
+    except:
+        print "erro theta", theta
+        pass
 
     knn = neighbors.KNeighborsRegressor(k)
     labels_hat = knn.fit(data_, labels_).predict(test_data)
@@ -121,8 +136,14 @@ for cv in range(0,cross_v):
     r2 = r2_score(test_labels, labels_hat)
     r2_cross_validation.append(r2)
 
-    print cv, ":", r2
+    compression = float(len(data_)) / len(train_data)
+    compression_cross_validation.append(compression)
+
+    print cv, " th:", theta, " | r2 =", r2, " c =", compression
     print
 
 print "r2: ", r2_cross_validation
-print "mean: ", np.mean(r2_cross_validation)
+print "mean: ", np.mean(r2_cross_validation), "\n"
+
+print "c: ", compression_cross_validation
+print "mean: ", np.mean(compression_cross_validation)
